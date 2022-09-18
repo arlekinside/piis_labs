@@ -123,12 +123,16 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     startNode = problem.getStartState()
     g = {startNode: 0}
+    visited = set()
 
     openSet = util.PriorityQueue()
     openSet.push((startNode, []), heuristic(startNode, problem))
 
     while not openSet.isEmpty():
         node, path = openSet.pop()
+        if node in visited:
+            continue
+        visited.add(node)
         if problem.isGoalState(node):
             return path
         for successor in problem.getSuccessors(node):
@@ -140,9 +144,7 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
 
             if state not in g:
                 g[state] = tentativeG
-                # "not in g" means wasn't in openSet
                 openSet.push(item, priority)
-            # le in case prev if passed
             if tentativeG <= g[state]:
                 g[state] = tentativeG
                 openSet.update(item, priority)
