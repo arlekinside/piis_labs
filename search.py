@@ -147,9 +147,37 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
                 g[state] = tentativeG
                 openSet.update(item, priority)
     raise Exception("Path can't be found")
+def aStarToGreedySearch(problem: SearchProblem, heuristic=nullHeuristic):
+    startNode = problem.getStartState()
+    g = {startNode: 0}
+
+    openSet = util.PriorityQueue()
+    openSet.push((startNode, []), 0)
+
+    while not openSet.isEmpty():
+        node, path = openSet.pop()
+        if problem.isGoalState(node):
+            return path
+        for successor in problem.getSuccessors(node):
+            state, action, cost = successor
+
+            tentativeG = g[node] + cost
+            item = (state, path + [action])
+            priority = tentativeG
+
+            if state not in g:
+                g[state] = tentativeG
+                # "not in g" means wasn't in openSet
+                openSet.push(item, priority)
+            # le in case prev if passed
+            if tentativeG <= g[state]:
+                g[state] = tentativeG
+                openSet.update(item, priority)
+    raise Exception("Path can't be found")
 
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
 astar = aStarSearch
+astarg = aStarToGreedySearch
 ucs = uniformCostSearch
