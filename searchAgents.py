@@ -319,7 +319,6 @@ class CornersProblem(search.SearchProblem):
             is the incremental cost of expanding to that successor
         """
         (x, y), corners = state
-        cornersList = list(corners)
 
         successors = []
         cost = 1
@@ -328,14 +327,12 @@ class CornersProblem(search.SearchProblem):
             # Here's a code snippet for figuring out whether a new position hits a wall:
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
-
-            for corner in cornersList:
-                if corner[0] == nextx and corner[1] == nexty:
-                    cornersList.remove(corner)
-                    nextState = ((nextx, nexty), tuple(cornersList))
-                    return [(nextState, action, cost)]
+            nextPosition = (nextx, nexty)
             if not self.walls[nextx][nexty]:
-                nextState = ((nextx, nexty), tuple(cornersList))
+                cornersList = list(corners)
+                if nextPosition in cornersList:
+                    cornersList.remove(nextPosition)
+                nextState = (nextPosition, tuple(cornersList))
                 successors.append((nextState, action, cost))
 
         self._expanded += 1 # DO NOT CHANGE
