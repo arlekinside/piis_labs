@@ -10,13 +10,15 @@
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
+from statistics import mean
 
-
+from MultiAgent.pacman import GameState
 from util import manhattanDistance
 from game import Directions
 import random, util
 
 from game import Agent
+
 
 class ReflexAgent(Agent):
     """
@@ -27,7 +29,6 @@ class ReflexAgent(Agent):
     it in any way you see fit, so long as you don't touch our method
     headers.
     """
-
 
     def getAction(self, gameState):
         """
@@ -45,7 +46,7 @@ class ReflexAgent(Agent):
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-        chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+        chosenIndex = random.choice(bestIndices)  # Pick randomly among the best
 
         "Add more of your code here if you want to"
 
@@ -76,6 +77,7 @@ class ReflexAgent(Agent):
         "*** YOUR CODE HERE ***"
         return successorGameState.getScore()
 
+
 def scoreEvaluationFunction(currentGameState):
     """
     This default evaluation function just returns the score of the state.
@@ -85,6 +87,7 @@ def scoreEvaluationFunction(currentGameState):
     (not reflex agents).
     """
     return currentGameState.getScore()
+
 
 class MultiAgentSearchAgent(Agent):
     """
@@ -101,10 +104,11 @@ class MultiAgentSearchAgent(Agent):
     is another abstract class.
     """
 
-    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '2'):
-        self.index = 0 # Pacman is always agent index 0
+    def __init__(self, evalFn='scoreEvaluationFunction', depth='2'):
+        self.index = 0  # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
+
 
 class MinimaxAgent(MultiAgentSearchAgent):
     """
@@ -137,17 +141,65 @@ class MinimaxAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
         util.raiseNotDefined()
 
+
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
     """
 
-    def getAction(self, gameState):
+    def getAction(self, gameState: GameState):
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.minimax(gameState, 0, float('-inf'), float('inf'))[0]
+
+    def minimax(self, state, depth, alpha, beta, action=None, agent=0):
+
+        if depth == self.depth or state.isWin() or state.isLose():
+            return action, self.evaluationFunction(state)
+
+        res: tuple
+        isPacman = agent == 0  # Maximizing player
+
+        actions = state.getLegalActions(agent)
+        resultAction = actions[0]
+
+        if isPacman:
+            best = float('-inf')
+            for a in actions:
+                nextState = state.generateSuccessor(agent, a)
+                res = self.minimax(nextState, depth + 1, alpha, beta, a, 1)
+
+                if best < res[1]:
+                    best = res[1]
+                    resultAction = a
+                alpha = max(alpha, best)
+
+                if beta <= alpha:
+                    break
+
+            return resultAction, best
+
+        else:
+            best = float('inf')
+            for a in actions:
+                nextState = state.generateSuccessor(agent, a)
+
+                if agent == state.getNumAgents() - 1:  # Last ghost
+                    res = self.minimax(nextState, depth + 1, alpha, beta, a)
+                else:
+                    res = self.minimax(nextState, depth + 1, alpha, beta, a, agent + 1)
+
+                if res[1] < best:
+                    best = res[1]
+                    resultAction = a
+                beta = min(beta, best)
+
+                if beta <= alpha:
+                    break
+
+            return resultAction, best
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
@@ -174,5 +226,31 @@ def betterEvaluationFunction(currentGameState):
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
 
+
+def alpaBetaEvaluationFunction(currentGameState: GameState):
+    if currentGameState.isWin():
+        return float("inf")
+    elif currentGameState.isLose():
+        return float("-inf")
+
+    pacman = currentGameState.getPacmanPosition()
+    ghostsList = currentGameState.getGhostStates()
+    foodLeft = currentGameState.getNumFood()
+
+    # foodList = currentGameState.getFood().asList()
+    # closestFood = 0
+    #
+    # if foodList:
+    #     closestFood = min([manhattanDistance(pacman, foodPos) for foodPos in foodList])
+
+    closestGhost = float("inf")
+    for ghost in ghostsList:
+        dist = manhattanDistance(pacman, ghost.getPosition())
+        if dist < closestGhost:
+            closestGhost = dist
+
+    return - 30 * foodLeft + closestGhost  # + closestFood
+
 # Abbreviation
 better = betterEvaluationFunction
+abeval = alpaBetaEvaluationFunction
