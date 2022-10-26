@@ -3,7 +3,7 @@ from chess import Board, PieceType
 
 
 def is_game_over(state: Board) -> bool:
-    return state.is_stalemate() or state.is_checkmate() or state.is_fivefold_repetition() or state.is_variant_end()
+    return state.is_stalemate() or state.is_checkmate() or state.is_variant_end() or state.is_fivefold_repetition()
 
 
 def get_pieces_num(board: Board, isWhite: bool):
