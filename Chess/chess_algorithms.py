@@ -95,7 +95,7 @@ class NegascoutAlgorithm(Algorithm):
             score, local_best = self.negascout(state, move, depth + 1, -b, -alpha)
             score *= -1
             if score > best_score:
-                if alpha < score < beta:
+                if alpha < score < beta and depth < self.max_depth - 1:
                     best_score = score
                     best_move = local_best
                 else:
@@ -123,23 +123,32 @@ class PvsAlgorithm(Algorithm):
             evaluation = self.evaluation.evaluate(state)
             state.pop()
             return evaluation, nextMove
-
+        is_first = True
         best_score = float("-inf")
         best_move = None
-        b = beta
 
         for move in get_successors(state, nextMove):
-            score, local_best = self.pvs(state, move, depth + 1, -b, -alpha)
-            score *= -1
-            if score > best_score:
-                if alpha < score < beta:
-                    best_score = score
-                    best_move = local_best
-                else:
-                    best_score, best_move = self.pvs(state, move, depth + 1, -beta, -score)
-                    best_score *= -1
+            if is_first:
+                is_first = False
+                best_score, best_move = self.pvs(state, move, depth + 1, -beta, -alpha)
+                best_score *= -1
+                if best_score > alpha:
+                    if best_score >= beta:
+                        return best_score, best_move
+                    alpha = best_score
 
-            if alpha > beta:
-                return alpha, move
-            b = alpha + 1
+            score, local_best = self.pvs(state, move, depth + 1, -alpha - 1, -alpha)
+            score *= -1
+            if alpha < score < beta:
+                # research
+                score, local_best = self.pvs(state, move, depth + 1, -beta, -alpha)
+                score *= -1
+                alpha = max(score, alpha)
+
+            if score > best_score:
+                if score >= beta:
+                    return score, local_best
+                best_score = score
+                best_move = local_best
+
         return best_score, best_move
